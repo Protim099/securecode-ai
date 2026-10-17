@@ -1,12 +1,11 @@
-from django.urls import path
-from rest_framework_simplejwt.views import TokenRefreshView
-from . import views
+from django.contrib import admin
+from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
-    path("auth/register/", views.RegisterView.as_view()),
-    path("auth/login/", views.LoginView.as_view()),
-    path("auth/refresh/", TokenRefreshView.as_view()),
-    path("auth/me/", views.MeView.as_view()),
-    path("admin/users/", views.AdminUserList.as_view()),
-    path("admin/users/<int:pk>/", views.AdminUserDetail.as_view()),
+    path("django-admin/", admin.site.urls),
+    path("api/", include("accounts.urls")),
+    path("api/", include("scans.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema")),
 ]
