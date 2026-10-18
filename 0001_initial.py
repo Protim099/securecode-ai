@@ -15,13 +15,81 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Profile',
+            name='AuditLog',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('role', models.CharField(choices=[('user', 'User'), ('admin', 'Admin')], default='user', max_length=10)),
-                ('organization', models.CharField(blank=True, max_length=120)),
+                ('action', models.CharField(max_length=60)),
+                ('detail', models.CharField(blank=True, max_length=255)),
+                ('ip', models.GenericIPAddressField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
+            options={
+                'ordering': ['-created_at'],
+            },
+        ),
+        migrations.CreateModel(
+            name='Scan',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('title', models.CharField(max_length=200)),
+                ('language', models.CharField(choices=[('python', 'Python'), ('javascript', 'JavaScript'), ('java', 'Java'), ('php', 'PHP')], max_length=20)),
+                ('status', models.CharField(choices=[('pending', 'Pending'), ('completed', 'Completed'), ('failed', 'Failed')], default='pending', max_length=10)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('completed_at', models.DateTimeField(blank=True, null=True)),
+                ('is_demo', models.BooleanField(default=False)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='scans', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'ordering': ['-created_at'],
+            },
+        ),
+        migrations.CreateModel(
+            name='ScanFile',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('filename', models.CharField(max_length=255)),
+                ('content', models.TextField()),
+                ('size', models.PositiveIntegerField()),
+                ('scan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files', to='scans.scan')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='ScanReport',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('fmt', models.CharField(max_length=5)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                ('scan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reports', to='scans.scan')),
+            ],
+        ),
+        migrations.CreateModel(
+            name='VulnerabilityFinding',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('rule_id', models.CharField(max_length=60)),
+                ('title', models.CharField(max_length=200)),
+                ('severity', models.CharField(choices=[('Critical', 'Critical'), ('High', 'High'), ('Medium', 'Medium'), ('Low', 'Low'), ('Info', 'Info')], max_length=10)),
+                ('line', models.PositiveIntegerField()),
+                ('evidence', models.TextField(blank=True)),
+                ('explanation', models.TextField(blank=True)),
+                ('cwe', models.CharField(blank=True, max_length=20)),
+                ('owasp', models.CharField(blank=True, max_length=40)),
+                ('remediation', models.TextField(blank=True)),
+                ('source', models.CharField(max_length=20)),
+                ('ai_suggestion', models.TextField(blank=True)),
+                ('ai_provider', models.CharField(blank=True, max_length=20)),
+                ('file', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='findings', to='scans.scanfile')),
+                ('scan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='findings', to='scans.scan')),
+            ],
+        ),
+        migrations.AddIndex(
+            model_name='scan',
+            index=models.Index(fields=['user', '-created_at'], name='scans_scan_user_id_5deba4_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='vulnerabilityfinding',
+            index=models.Index(fields=['scan', 'severity'], name='scans_vulne_scan_id_2d3d83_idx'),
         ),
     ]

@@ -1,11 +1,11 @@
-from django.contrib import admin
-from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from django.urls import path
+from rest_framework.routers import DefaultRouter
+from . import views
 
-urlpatterns = [
-    path("django-admin/", admin.site.urls),
-    path("api/", include("accounts.urls")),
-    path("api/", include("scans.urls")),
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema")),
+router = DefaultRouter()
+router.register("scans", views.ScanViewSet, basename="scan")
+urlpatterns = router.urls + [
+    path("findings/<int:pk>/explain/", views.explain_finding),
+    path("stats/", views.stats),
+    path("admin/audit/", views.AuditList.as_view()),
 ]
